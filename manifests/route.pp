@@ -61,27 +61,27 @@ define network::route (
     path    => "/etc/sysconfig/network-scripts/route-${ifname}",
     content => template('network/route-eth.erb'),
     before  => File["ifcfg-${ifname}"],
-    notify  => Exec["nmcli_manage_${ifname}"]
+    notify  => Exec["nmcli_clean_manage_${ifname}"]
   }
-  exec { "nmcli_clean_${ifname}":
+  exec { "nmcli_clean_route_${ifname}":
     path    => '/usr/bin:/bin:/usr/sbin:/sbin',
     command => "nmcli connection delete $(nmcli -f UUID,DEVICE connection show|grep \'\\-\\-\'|awk \'{print \$1}\')",
     onlyif  => "nmcli -f UUID,DEVICE connection show|grep \'\\-\\-\'",
-    require => Exec["nmcli_manage_${ifname}"]
+    require => Exec["nmcli_clean_manage_${ifname}"]
   }
 
   exec { "nmcli_config_route_${ifname}":
     path        => '/usr/bin:/bin:/usr/sbin:/sbin',
     command     => "nmcli connection load /etc/sysconfig/network-scripts/ifcfg-${ifname}",
     refreshonly => true,
-    notify      => Exec["nmcli_manage_${ifname}"],
+    notify      => Exec["nmcli_clean_manage_${ifname}"],
   }
 
-  exec { "nmcli_manage_${ifname}":
+  exec { "nmcli_clean_manage_${ifname}":
     path        => '/usr/bin:/bin:/usr/sbin:/sbin',
     command     => "nmcli connection ${ensure} ${ifname}",
     refreshonly => true,
-    notify      => Exec["nmcli_clean_${ifname}"],
+    notify      => Exec["nmcli_clean_route_${ifname}"],
     require     => Exec["nmcli_config_route_${ifname}"]
   }
 } # define network::route
