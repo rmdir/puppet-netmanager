@@ -70,7 +70,7 @@ define network::route (
     require => Exec["nmcli_manage_${ifname}"]
   }
 
-  exec { "nmcli_config_${ifname}":
+  exec { "nmcli_config_route_${ifname}":
     path        => '/usr/bin:/bin:/usr/sbin:/sbin',
     command     => "nmcli connection load /etc/sysconfig/network-scripts/ifcfg-${ifname}",
     refreshonly => true,
@@ -82,6 +82,6 @@ define network::route (
     command     => "nmcli connection ${ensure} ${ifname}",
     refreshonly => true,
     notify      => Exec["nmcli_clean_${ifname}"],
-    require     => Exec["nmcli_config_${ifname}"]
+    require     => Exec["nmcli_config_route_${ifname}"]
   }
 } # define network::route
