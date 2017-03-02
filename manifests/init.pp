@@ -192,7 +192,7 @@ define network_if_base (
       command     => "ip addr flush dev ${device}",
       refreshonly => true,
       subscribe   => File["ifcfg-${ifname}"],
-      before      => Exec['nmcli_manage'],
+      before      => Exec["nmcli_manage_${ifname}"],
       path        => '/sbin:/usr/sbin',
     }
   }
@@ -204,29 +204,29 @@ define network_if_base (
     owner   => 'root',
     group   => 'root',
     content => $iftemplate,
-    notify  => Exec['nmcli_config']
+    notify  => Exec["nmcli_config_${ifname}"]
   }
 
-  exec { 'nmcli_clean':
+  exec { "nmcli_clean_${ifname}":
     path    => '/usr/bin:/bin:/usr/sbin:/sbin',
     command => "nmcli connection delete $(nmcli -f UUID,DEVICE connection show|grep \'\\-\\-\'|awk \'{print \$1}\')",
     onlyif  => "nmcli -f UUID,DEVICE connection show|grep \'\\-\\-\'",
-    require => Exec['nmcli_manage']
+    require => Exec["nmcli_manage_${ifname}"]
   }
 
-  exec { 'nmcli_config':
+  exec { "nmcli_config_${ifname}":
     path        => '/usr/bin:/bin:/usr/sbin:/sbin',
     command     => "nmcli connection load /etc/sysconfig/network-scripts/ifcfg-${ifname}",
     refreshonly => true,
-    notify      => Exec['nmcli_manage'],
+    notify      => Exec["nmcli_manage_${ifname}"],
   }
 
-  exec { 'nmcli_manage':
+  exec { "nmcli_manage_${ifname}":
     path        => '/usr/bin:/bin:/usr/sbin:/sbin',
     command     => "nmcli connection ${ensure} ${ifname}",
     refreshonly => true,
-    notify      => Exec['nmcli_clean'],
-    require     => Exec['nmcli_config']
+    notify      => Exec["nmcli_clean_${ifname}"],
+    require     => Exec["nmcli_config_${ifname}"]
   }
 
 } # define network_if_base

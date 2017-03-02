@@ -75,6 +75,27 @@ define network::bridge::dynamic (
     path    => "/etc/sysconfig/network-scripts/ifcfg-${ifname}",
     content => template('network/ifcfg-br.erb'),
     require => Package['bridge-utils'],
-    notify  => Exec['nmcli_config']
+    notify  => Exec["nmcli_config_${ifname}"]
+  }
+  exec { "nmcli_clean_${ifname}":
+    path    => '/usr/bin:/bin:/usr/sbin:/sbin',
+    command => "nmcli connection delete $(nmcli -f UUID,DEVICE connection show|grep \'\\-\\-\'|awk \'{print \$1}\')",
+    onlyif  => "nmcli -f UUID,DEVICE connection show|grep \'\\-\\-\'",
+    require => Exec["nmcli_manage_${ifname}"]
+  }
+
+  exec { "nmcli_config_${ifname}":
+    path        => '/usr/bin:/bin:/usr/sbin:/sbin',
+    command     => "nmcli connection load /etc/sysconfig/network-scripts/ifcfg-${ifname}",
+    refreshonly => true,
+    notify      => Exec["nmcli_manage_${ifname}"],
+  }
+
+  exec { "nmcli_manage_${ifname}":
+    path        => '/usr/bin:/bin:/usr/sbin:/sbin',
+    command     => "nmcli connection ${ensure} ${ifname}",
+    refreshonly => true,
+    notify      => Exec["nmcli_clean_${ifname}"],
+    require     => Exec["nmcli_config_${ifname}"]
   }
 } # define network::bridge::dynamic
