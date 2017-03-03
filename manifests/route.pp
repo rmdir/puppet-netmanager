@@ -42,7 +42,8 @@
 define network::route (
   $ipaddress,
   $netmask,
-  $gateway
+  $gateway,
+  $ensure = 'up',
 ) {
   # Validate our arrays
   validate_array($ipaddress)
